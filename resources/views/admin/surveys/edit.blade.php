@@ -98,6 +98,22 @@
                     <small class="text-muted ms-4">Si está activado, los usuarios verán los resultados en tiempo real después de votar.</small>
                 </div>
 
+                <!-- Modo de visualización de resultados -->
+                <div class="mb-4">
+                    <label for="results_display_mode" class="form-label fw-semibold">
+                        <i class="bi bi-layout-text-window"></i> Modo de visualización de resultados
+                    </label>
+                    <select class="form-select" name="results_display_mode" id="results_display_mode">
+                        <option value="all" {{ old('results_display_mode', $survey->results_display_mode ?? 'all') == 'all' ? 'selected' : '' }}>
+                            Mostrar todas las preguntas a la vez
+                        </option>
+                        <option value="collapsible" {{ old('results_display_mode', $survey->results_display_mode ?? 'all') == 'collapsible' ? 'selected' : '' }}>
+                            Mostrar preguntas desplegables (acordeón)
+                        </option>
+                    </select>
+                    <small class="text-muted">Selecciona cómo se mostrarán los resultados de la encuesta.</small>
+                </div>
+
                 <!-- 2 Votos por Minuto por Opción -->
                 <div class="mb-4">
                     <div class="form-check form-switch">

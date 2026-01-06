@@ -17,6 +17,7 @@ class Survey extends Model
         'is_active',
         'is_finished',
         'show_results',
+        'results_display_mode',
         'one_vote_per_minute_per_option',
         'published_at',
         'finished_at',

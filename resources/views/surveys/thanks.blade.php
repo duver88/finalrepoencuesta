@@ -88,9 +88,34 @@
                                 <i class="bi bi-graph-up-arrow"></i> RESULTADOS EN VIVO
                             </h3>
 
+                        @if(($survey->results_display_mode ?? 'all') === 'collapsible')
+                            <!-- Modo Acordeón/Desplegable -->
+                            <div class="accordion" id="resultsAccordion">
+                        @foreach($statistics as $index => $stat)
+                                <div class="accordion-item mb-3" style="border: 2px solid #fdd71a; background: #000000;">
+                                    <h2 class="accordion-header" id="heading{{ $index }}">
+                                        <button class="accordion-button {{ $index === 0 ? '' : 'collapsed' }}" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#collapse{{ $index }}"
+                                                aria-expanded="{{ $index === 0 ? 'true' : 'false' }}" aria-controls="collapse{{ $index }}"
+                                                style="background: #1a1a1a; color: #fdd71a; font-weight: bold; border: none;">
+                                            <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                                  style="width: 35px; height: 35px; font-size: 1rem;">
+                                                {{ $index + 1 }}
+                                            </span>
+                                            {{ $stat['question'] }}
+                                        </button>
+                                    </h2>
+                                    <div id="collapse{{ $index }}" class="accordion-collapse collapse {{ $index === 0 ? 'show' : '' }}"
+                                         aria-labelledby="heading{{ $index }}" data-bs-parent="#resultsAccordion">
+                                        <div class="accordion-body" style="background: #ffffff;">
+                                            <div class="question-block">
+                        @else
+                            <!-- Modo Todas a la vez -->
                         @foreach($statistics as $index => $stat)
                             <div class="question-block {{ $loop->last ? '' : 'mb-5 pb-5 border-bottom' }}">
+                        @endif
                                 <!-- Pregunta -->
+                        @if(($survey->results_display_mode ?? 'all') === 'all')
                                 <div class="d-flex align-items-start gap-3 mb-5">
                                     <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; font-size: 1.2rem; flex-shrink: 0;">
                                         {{ $index + 1 }}
@@ -99,6 +124,7 @@
                                         <h5 class="fw-bold text-dark mb-0">{{ $stat['question'] }}</h5>
                                     </div>
                                 </div>
+                        @endif
 
                                 <!-- Gráfico de pastel - ARRIBA, ANCHO COMPLETO -->
                                 <div class="row mb-5">
@@ -178,8 +204,18 @@
                                         </div>
                                     </div>
                                 </div>
+                        @if(($survey->results_display_mode ?? 'all') === 'collapsible')
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                        @else
                             </div>
+                        @endif
                         @endforeach
+                        @if(($survey->results_display_mode ?? 'all') === 'collapsible')
+                            </div>
+                        @endif
 
                             <!-- Información de privacidad -->
                             <div class="alert alert-info border-0 shadow-sm mt-5" role="alert" style="background: linear-gradient(135deg, rgba(13, 110, 253, 0.08) 0%, rgba(13, 202, 240, 0.08) 100%);">

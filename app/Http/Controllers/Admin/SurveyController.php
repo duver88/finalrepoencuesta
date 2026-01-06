@@ -39,6 +39,7 @@ class SurveyController extends Controller
             'description' => 'nullable|string|max:1000',
             'banner' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:2048|dimensions:min_width=100,min_height=100,max_width=4000,max_height=4000',
             'show_results' => 'nullable|boolean',
+            'results_display_mode' => 'nullable|in:all,collapsible',
             'one_vote_per_minute_per_option' => 'nullable|boolean',
             'questions' => 'required|array|min:1|max:50',
             'questions.*.question_text' => 'required|string|max:500',
@@ -58,6 +59,7 @@ class SurveyController extends Controller
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
                 'show_results' => $request->has('show_results') ? true : false,
+                'results_display_mode' => $request->input('results_display_mode', 'all'),
                 'one_vote_per_minute_per_option' => $request->has('one_vote_per_minute_per_option') ? true : false,
             ]);
 
@@ -224,6 +226,7 @@ class SurveyController extends Controller
             'og_image' => 'nullable|image|max:2048',
             'is_active' => 'boolean',
             'show_results' => 'nullable|boolean',
+            'results_display_mode' => 'nullable|in:all,collapsible',
             'one_vote_per_minute_per_option' => 'nullable|boolean',
             'questions' => 'required|array|min:1',
             'questions.*.id' => 'nullable|exists:questions,id',
@@ -249,6 +252,11 @@ class SurveyController extends Controller
             // Solo actualizar show_results si el campo existe en la tabla
             if (Schema::hasColumn('surveys', 'show_results')) {
                 $updateData['show_results'] = $request->boolean('show_results');
+            }
+
+            // Solo actualizar results_display_mode si el campo existe en la tabla
+            if (Schema::hasColumn('surveys', 'results_display_mode')) {
+                $updateData['results_display_mode'] = $request->input('results_display_mode', 'all');
             }
 
             // Solo actualizar one_vote_per_minute_per_option si el campo existe en la tabla
@@ -343,7 +351,9 @@ class SurveyController extends Controller
 
                     if (isset($optionData['id'])) {
                         $option = QuestionOption::find($optionData['id']);
-                        $option->update($optionUpdateData);
+                        if ($option) {
+                            $option->update($optionUpdateData);
+                        }
                     } else {
                         $question->options()->create($optionUpdateData);
                     }
