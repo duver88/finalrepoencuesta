@@ -108,110 +108,183 @@
                                     <div id="collapse{{ $index }}" class="accordion-collapse collapse {{ $index === 0 ? 'show' : '' }}"
                                          aria-labelledby="heading{{ $index }}" data-bs-parent="#resultsAccordion">
                                         <div class="accordion-body" style="background: #ffffff;">
+                                            <!-- Gráfico de pastel - ARRIBA, ANCHO COMPLETO -->
+                                            <div class="row mb-5">
+                                                <div class="col-12">
+                                                    <div class="chart-container-web p-5 bg-white rounded-4 shadow-sm" style="position: relative; height: 600px;">
+                                                        <canvas id="chart-{{ $index }}"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Opciones con barras de progreso - ABAJO EN 2 COLUMNAS -->
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <div class="options-container row row-cols-1 row-cols-md-2 g-4">
+                                                    @foreach($stat['options'] as $optIndex => $option)
+                                                        @php
+                                                            // Usar color personalizado o fallback a colores por defecto
+                                                            $optionColor = $option['color'] ?? null;
+                                                            $gradientStart = $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0];
+                                                            $gradientEnd = $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][1];
+
+                                                            // Ajustar segundo color del gradiente (más claro)
+                                                            if ($optionColor) {
+                                                                // Crear versión más clara del color para el gradiente
+                                                                $gradientEnd = $optionColor;
+                                                            }
+                                                        @endphp
+                                                        <div class="col">
+                                                            <div class="option-item fade-in p-4 rounded-3 h-100 bg-white shadow-sm"
+                                                                 style="animation-delay: {{ $optIndex * 0.1 }}s; border-left: 5px solid {{ $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0] }};">
+                                                                <div class="d-flex justify-content-between align-items-center mb-3 gap-3">
+                                                                    <span class="fw-semibold text-dark d-flex align-items-center gap-2">
+                                                                        <span class="d-inline-block rounded-circle" style="width: 14px; height: 14px; background-color: {{ $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0] }}; flex-shrink: 0;"></span>
+                                                                        <span>{{ $option['text'] }}</span>
+                                                                    </span>
+                                                                    <span class="fw-bold text-primary" style="font-size: 1.5rem; flex-shrink: 0;">
+                                                                        <span class="percentage-counter" data-target="{{ $option['percentage'] }}">0</span>%
+                                                                    </span>
+                                                                </div>
+
+                                                                <!-- Barra de progreso animada con color personalizado -->
+                                                                <div class="progress shadow-sm" style="height: 30px; border-radius: 15px; background: rgba(0,0,0,0.05);">
+                                                                    <div class="progress-bar progress-bar-animated progress-bar-striped position-relative overflow-visible"
+                                                                         role="progressbar"
+                                                                         style="width: 0%;
+                                                                                background: linear-gradient(90deg, {{ $gradientStart }} 0%, {{ $gradientEnd }} 100%);
+                                                                                border-radius: 15px;
+                                                                                transition: width 1.5s ease-out {{ $optIndex * 0.2 }}s;"
+                                                                         data-width="{{ $option['percentage'] }}"
+                                                                         aria-valuenow="{{ $option['percentage'] }}"
+                                                                         aria-valuemin="0"
+                                                                         aria-valuemax="100">
+
+                                                                        @if($option['percentage'] > 0)
+                                                                            <!-- Efecto de brillo -->
+                                                                            <span class="shine-effect"></span>
+                                                                        @endif
+                                                                    </div>
+                                                                </div>
+
+                                                                <!-- Contador de votos válidos y no válidos -->
+                                                                <div class="mt-2 d-flex justify-content-between align-items-center">
+                                                                    <small class="text-muted">
+                                                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                                                        <strong>{{ $option['votes'] }}</strong> votos válidos
+                                                                    </small>
+                                                                    @if(isset($option['invalid_votes']) && $option['invalid_votes'] > 0)
+                                                                        <small class="text-muted">
+                                                                            <i class="bi bi-x-circle-fill text-danger"></i>
+                                                                            <strong>{{ $option['invalid_votes'] }}</strong> no válidos
+                                                                        </small>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                            </div>
                         @else
                             <!-- Modo Todas a la vez -->
                             @foreach($statistics as $index => $stat)
                                 <div class="question-block {{ $loop->last ? '' : 'mb-5 pb-5 border-bottom' }}">
-                                <!-- Pregunta -->
-                                <div class="d-flex align-items-start gap-3 mb-5">
-                                    <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; font-size: 1.2rem; flex-shrink: 0;">
-                                        {{ $index + 1 }}
-                                    </span>
-                                    <div class="flex-grow-1">
-                                        <h5 class="fw-bold text-dark mb-0">{{ $stat['question'] }}</h5>
-                                    </div>
-                                </div>
-                        @endif
-
-                                <!-- Gráfico de pastel - ARRIBA, ANCHO COMPLETO -->
-                                <div class="row mb-5">
-                                    <div class="col-12">
-                                        <div class="chart-container-web p-5 bg-white rounded-4 shadow-sm" style="position: relative; height: 600px;">
-                                            <canvas id="chart-{{ $index }}"></canvas>
+                                    <!-- Pregunta -->
+                                    <div class="d-flex align-items-start gap-3 mb-5">
+                                        <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; font-size: 1.2rem; flex-shrink: 0;">
+                                            {{ $index + 1 }}
+                                        </span>
+                                        <div class="flex-grow-1">
+                                            <h5 class="fw-bold text-dark mb-0">{{ $stat['question'] }}</h5>
                                         </div>
                                     </div>
-                                </div>
 
-                                <!-- Opciones con barras de progreso - ABAJO EN 2 COLUMNAS -->
-                                <div class="row">
-                                    <div class="col-12">
-                                        <div class="options-container row row-cols-1 row-cols-md-2 g-4">
-                                    @foreach($stat['options'] as $optIndex => $option)
-                                        @php
-                                            // Usar color personalizado o fallback a colores por defecto
-                                            $optionColor = $option['color'] ?? null;
-                                            $gradientStart = $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0];
-                                            $gradientEnd = $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][1];
+                                    <!-- Gráfico de pastel - ARRIBA, ANCHO COMPLETO -->
+                                    <div class="row mb-5">
+                                        <div class="col-12">
+                                            <div class="chart-container-web p-5 bg-white rounded-4 shadow-sm" style="position: relative; height: 600px;">
+                                                <canvas id="chart-{{ $index }}"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                            // Ajustar segundo color del gradiente (más claro)
-                                            if ($optionColor) {
-                                                // Crear versión más clara del color para el gradiente
-                                                $gradientEnd = $optionColor;
-                                            }
-                                        @endphp
-                                        <div class="col">
-                                            <div class="option-item fade-in p-4 rounded-3 h-100 bg-white shadow-sm"
-                                                 style="animation-delay: {{ $optIndex * 0.1 }}s; border-left: 5px solid {{ $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0] }};">
-                                                <div class="d-flex justify-content-between align-items-center mb-3 gap-3">
-                                                    <span class="fw-semibold text-dark d-flex align-items-center gap-2">
-                                                        <span class="d-inline-block rounded-circle" style="width: 14px; height: 14px; background-color: {{ $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0] }}; flex-shrink: 0;"></span>
-                                                        <span>{{ $option['text'] }}</span>
-                                                    </span>
-                                                    <span class="fw-bold text-primary" style="font-size: 1.5rem; flex-shrink: 0;">
-                                                        <span class="percentage-counter" data-target="{{ $option['percentage'] }}">0</span>%
-                                                    </span>
-                                                </div>
+                                    <!-- Opciones con barras de progreso - ABAJO EN 2 COLUMNAS -->
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="options-container row row-cols-1 row-cols-md-2 g-4">
+                                            @foreach($stat['options'] as $optIndex => $option)
+                                                @php
+                                                    // Usar color personalizado o fallback a colores por defecto
+                                                    $optionColor = $option['color'] ?? null;
+                                                    $gradientStart = $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0];
+                                                    $gradientEnd = $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][1];
 
-                                                <!-- Barra de progreso animada con color personalizado -->
-                                                <div class="progress shadow-sm" style="height: 30px; border-radius: 15px; background: rgba(0,0,0,0.05);">
-                                                    <div class="progress-bar progress-bar-animated progress-bar-striped position-relative overflow-visible"
-                                                         role="progressbar"
-                                                         style="width: 0%;
-                                                                background: linear-gradient(90deg, {{ $gradientStart }} 0%, {{ $gradientEnd }} 100%);
-                                                                border-radius: 15px;
-                                                                transition: width 1.5s ease-out {{ $optIndex * 0.2 }}s;"
-                                                         data-width="{{ $option['percentage'] }}"
-                                                         aria-valuenow="{{ $option['percentage'] }}"
-                                                         aria-valuemin="0"
-                                                         aria-valuemax="100">
+                                                    // Ajustar segundo color del gradiente (más claro)
+                                                    if ($optionColor) {
+                                                        // Crear versión más clara del color para el gradiente
+                                                        $gradientEnd = $optionColor;
+                                                    }
+                                                @endphp
+                                                <div class="col">
+                                                    <div class="option-item fade-in p-4 rounded-3 h-100 bg-white shadow-sm"
+                                                         style="animation-delay: {{ $optIndex * 0.1 }}s; border-left: 5px solid {{ $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0] }};">
+                                                        <div class="d-flex justify-content-between align-items-center mb-3 gap-3">
+                                                            <span class="fw-semibold text-dark d-flex align-items-center gap-2">
+                                                                <span class="d-inline-block rounded-circle" style="width: 14px; height: 14px; background-color: {{ $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0] }}; flex-shrink: 0;"></span>
+                                                                <span>{{ $option['text'] }}</span>
+                                                            </span>
+                                                            <span class="fw-bold text-primary" style="font-size: 1.5rem; flex-shrink: 0;">
+                                                                <span class="percentage-counter" data-target="{{ $option['percentage'] }}">0</span>%
+                                                            </span>
+                                                        </div>
 
-                                                        @if($option['percentage'] > 0)
-                                                            <!-- Efecto de brillo -->
-                                                            <span class="shine-effect"></span>
-                                                        @endif
+                                                        <!-- Barra de progreso animada con color personalizado -->
+                                                        <div class="progress shadow-sm" style="height: 30px; border-radius: 15px; background: rgba(0,0,0,0.05);">
+                                                            <div class="progress-bar progress-bar-animated progress-bar-striped position-relative overflow-visible"
+                                                                 role="progressbar"
+                                                                 style="width: 0%;
+                                                                        background: linear-gradient(90deg, {{ $gradientStart }} 0%, {{ $gradientEnd }} 100%);
+                                                                        border-radius: 15px;
+                                                                        transition: width 1.5s ease-out {{ $optIndex * 0.2 }}s;"
+                                                                 data-width="{{ $option['percentage'] }}"
+                                                                 aria-valuenow="{{ $option['percentage'] }}"
+                                                                 aria-valuemin="0"
+                                                                 aria-valuemax="100">
+
+                                                                @if($option['percentage'] > 0)
+                                                                    <!-- Efecto de brillo -->
+                                                                    <span class="shine-effect"></span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Contador de votos válidos y no válidos -->
+                                                        <div class="mt-2 d-flex justify-content-between align-items-center">
+                                                            <small class="text-muted">
+                                                                <i class="bi bi-check-circle-fill text-success"></i>
+                                                                <strong>{{ $option['votes'] }}</strong> votos válidos
+                                                            </small>
+                                                            @if(isset($option['invalid_votes']) && $option['invalid_votes'] > 0)
+                                                                <small class="text-muted">
+                                                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                                                    <strong>{{ $option['invalid_votes'] }}</strong> no válidos
+                                                                </small>
+                                                            @endif
+                                                        </div>
                                                     </div>
                                                 </div>
-
-                                                <!-- Contador de votos válidos y no válidos -->
-                                                <div class="mt-2 d-flex justify-content-between align-items-center">
-                                                    <small class="text-muted">
-                                                        <i class="bi bi-check-circle-fill text-success"></i>
-                                                        <strong>{{ $option['votes'] }}</strong> votos válidos
-                                                    </small>
-                                                    @if(isset($option['invalid_votes']) && $option['invalid_votes'] > 0)
-                                                        <small class="text-muted">
-                                                            <i class="bi bi-x-circle-fill text-danger"></i>
-                                                            <strong>{{ $option['invalid_votes'] }}</strong> no válidos
-                                                        </small>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                        @if(($survey->results_display_mode ?? 'all') === 'collapsible')
+                                            @endforeach
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                        @else
-                            </div>
-                        @endif
-                        @endforeach
-                        @if(($survey->results_display_mode ?? 'all') === 'collapsible')
-                            </div>
+                            @endforeach
                         @endif
 
                             <!-- Información de privacidad -->
