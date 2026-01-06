@@ -44,6 +44,7 @@ class SurveyController extends Controller
             'questions' => 'required|array|min:1|max:50',
             'questions.*.question_text' => 'required|string|max:500',
             'questions.*.question_type' => 'required|in:single_choice,multiple_choice',
+            'questions.*.display_mode' => 'nullable|in:buttons,dropdown',
             'questions.*.options' => 'required|array|min:2|max:20',
             'questions.*.options.*' => 'required|string|max:255',
             'questions.*.colors' => 'required|array|min:2|max:20',
@@ -116,6 +117,7 @@ class SurveyController extends Controller
                 $question = $survey->questions()->create([
                     'question_text' => $questionData['question_text'],
                     'question_type' => $questionData['question_type'],
+                    'display_mode' => $questionData['display_mode'] ?? 'buttons',
                     'order' => $index,
                 ]);
 
@@ -232,6 +234,7 @@ class SurveyController extends Controller
             'questions.*.id' => 'nullable|exists:questions,id',
             'questions.*.question_text' => 'required|string',
             'questions.*.question_type' => 'required|in:single_choice,multiple_choice',
+            'questions.*.display_mode' => 'nullable|in:buttons,dropdown',
             'questions.*.options' => 'required|array|min:2',
             'questions.*.options.*.id' => 'nullable|exists:question_options,id',
             'questions.*.options.*.option_text' => 'required|string',
@@ -297,12 +300,14 @@ class SurveyController extends Controller
                     $question->update([
                         'question_text' => $questionData['question_text'],
                         'question_type' => $questionData['question_type'],
+                        'display_mode' => $questionData['display_mode'] ?? 'buttons',
                         'order' => $index,
                     ]);
                 } else {
                     $question = $survey->questions()->create([
                         'question_text' => $questionData['question_text'],
                         'question_type' => $questionData['question_type'],
+                        'display_mode' => $questionData['display_mode'] ?? 'buttons',
                         'order' => $index,
                     ]);
                 }

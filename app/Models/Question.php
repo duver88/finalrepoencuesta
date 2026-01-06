@@ -10,6 +10,7 @@ class Question extends Model
         'survey_id',
         'question_text',
         'question_type',
+        'display_mode',
         'order',
     ];
 

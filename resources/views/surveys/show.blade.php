@@ -74,9 +74,21 @@
                             </h3>
 
                             @if($question->question_type === 'single_choice')
-                                @php $hasImages = $question->options->contains(fn($opt) => !empty($opt->image)); @endphp
+                                @php
+                                    $hasImages = $question->options->contains(fn($opt) => !empty($opt->image));
+                                    $displayMode = $question->display_mode ?? 'buttons';
+                                @endphp
 
-                                @if($hasImages)
+                                @if($displayMode === 'dropdown' && !$hasImages)
+                                    <!-- Modo Dropdown/Select -->
+                                    <select name="answers[{{ $question->id }}]" required class="form-select"
+                                            style="background: #2d2d2d; color: #ffffff; border: 1px solid #444; padding: 12px; border-radius: 8px; font-size: 14px;">
+                                        <option value="">Selecciona una opción...</option>
+                                        @foreach($question->options->shuffle() as $option)
+                                            <option value="{{ $option->id }}">{{ $option->option_text }}</option>
+                                        @endforeach
+                                    </select>
+                                @elseif($hasImages)
                                     <div class="options-grid">
                                         @foreach($question->options->shuffle() as $option)
                                             <label class="image-option" for="option{{ $option->id }}">
@@ -100,9 +112,23 @@
                                     @endforeach
                                 @endif
                             @else
-                                @php $hasImages = $question->options->contains(fn($opt) => !empty($opt->image)); @endphp
+                                @php
+                                    $hasImages = $question->options->contains(fn($opt) => !empty($opt->image));
+                                    $displayMode = $question->display_mode ?? 'buttons';
+                                @endphp
 
-                                @if($hasImages)
+                                @if($displayMode === 'dropdown' && !$hasImages)
+                                    <!-- Modo Dropdown/Select Múltiple -->
+                                    <select name="answers[{{ $question->id }}][]" multiple class="form-select"
+                                            style="background: #2d2d2d; color: #ffffff; border: 1px solid #444; padding: 12px; border-radius: 8px; font-size: 14px; min-height: 200px;">
+                                        @foreach($question->options as $option)
+                                            <option value="{{ $option->id }}">{{ $option->option_text }}</option>
+                                        @endforeach
+                                    </select>
+                                    <small style="color: #999; display: block; margin-top: 8px;">
+                                        <i class="bi bi-info-circle"></i> Mantén presionado Ctrl (Windows) o Cmd (Mac) para seleccionar múltiples opciones
+                                    </small>
+                                @elseif($hasImages)
                                     <div class="options-grid">
                                         @foreach($question->options as $option)
                                             <label class="image-option" for="option{{ $option->id }}">

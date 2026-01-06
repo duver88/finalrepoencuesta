@@ -180,6 +180,19 @@
                                 </div>
 
                                 <div class="mb-3">
+                                    <label class="form-label fw-semibold">Modo de Visualización *</label>
+                                    <select name="questions[{{ $qIndex }}][display_mode]" required class="form-select">
+                                        <option value="buttons" {{ ($question->display_mode ?? 'buttons') == 'buttons' ? 'selected' : '' }}>
+                                            Botones (mostrar todas las opciones)
+                                        </option>
+                                        <option value="dropdown" {{ ($question->display_mode ?? 'buttons') == 'dropdown' ? 'selected' : '' }}>
+                                            Desplegable (select - ideal para muchas opciones)
+                                        </option>
+                                    </select>
+                                    <small class="text-muted">Elige "Desplegable" si la pregunta tiene muchas opciones.</small>
+                                </div>
+
+                                <div class="mb-3">
                                     <label class="form-label fw-semibold">Opciones de Respuesta *</label>
                                     <div id="options-container-{{ $qIndex }}">
                                         @foreach($question->options as $oIndex => $option)
@@ -361,6 +374,15 @@ function addNewQuestion() {
                     <option value="single_choice">Opción Única (radio)</option>
                     <option value="multiple_choice">Opción Múltiple (checkbox)</option>
                 </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Modo de Visualización *</label>
+                <select name="questions[${newQuestionIndex}][display_mode]" required class="form-select">
+                    <option value="buttons">Botones (mostrar todas las opciones)</option>
+                    <option value="dropdown">Desplegable (select - ideal para muchas opciones)</option>
+                </select>
+                <small class="text-muted">Elige "Desplegable" si la pregunta tiene muchas opciones.</small>
             </div>
 
             <div class="mb-3">
