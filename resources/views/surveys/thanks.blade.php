@@ -91,7 +91,7 @@
                         @if(($survey->results_display_mode ?? 'all') === 'collapsible')
                             <!-- Modo Acordeón/Desplegable -->
                             <div class="accordion" id="resultsAccordion">
-                        @foreach($statistics as $index => $stat)
+                            @foreach($statistics as $index => $stat)
                                 <div class="accordion-item mb-3" style="border: 2px solid #fdd71a; background: #000000;">
                                     <h2 class="accordion-header" id="heading{{ $index }}">
                                         <button class="accordion-button {{ $index === 0 ? '' : 'collapsed' }}" type="button"
@@ -108,14 +108,11 @@
                                     <div id="collapse{{ $index }}" class="accordion-collapse collapse {{ $index === 0 ? 'show' : '' }}"
                                          aria-labelledby="heading{{ $index }}" data-bs-parent="#resultsAccordion">
                                         <div class="accordion-body" style="background: #ffffff;">
-                                            <div class="question-block">
                         @else
                             <!-- Modo Todas a la vez -->
-                        @foreach($statistics as $index => $stat)
-                            <div class="question-block {{ $loop->last ? '' : 'mb-5 pb-5 border-bottom' }}">
-                        @endif
+                            @foreach($statistics as $index => $stat)
+                                <div class="question-block {{ $loop->last ? '' : 'mb-5 pb-5 border-bottom' }}">
                                 <!-- Pregunta -->
-                        @if(($survey->results_display_mode ?? 'all') === 'all')
                                 <div class="d-flex align-items-start gap-3 mb-5">
                                     <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; font-size: 1.2rem; flex-shrink: 0;">
                                         {{ $index + 1 }}
