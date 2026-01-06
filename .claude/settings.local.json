@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(php artisan make:migration:*)",
+      "Bash(php artisan migrate:*)",
+      "Bash(php artisan:*)",
+      "Bash(nul)",
+      "Bash(find:*)",
+      "Bash(net start:*)",
+      "Bash(composer require:*)",
+      "Bash(composer show:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

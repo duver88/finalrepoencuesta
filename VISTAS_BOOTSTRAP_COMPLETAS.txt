@@ -1,0 +1,25 @@
+==============================================
+TODAS LAS VISTAS CONVERTIDAS A BOOTSTRAP 5
+==============================================
+
+Las siguientes vistas ya están actualizadas con Bootstrap 5:
+
+✅ resources/views/layouts/app.blade.php
+✅ resources/views/layouts/admin.blade.php  
+✅ resources/views/auth/login.blade.php
+✅ resources/views/admin/dashboard.blade.php
+✅ resources/views/admin/surveys/index.blade.php
+✅ resources/views/admin/surveys/create.blade.php
+
+Vistas pendientes que necesitan conversión:
+- resources/views/admin/surveys/show.blade.php (Resultados)
+- resources/views/admin/surveys/edit.blade.php (Editar)
+- resources/views/surveys/show.blade.php (Vista pública)
+- resources/views/surveys/thanks.blade.php (Agradecimiento)
+
+INSTRUCCIONES:
+1. El servidor Laravel está corriendo en: http://127.0.0.1:8000
+2. Ya puedes iniciar sesión y crear encuestas
+3. Las vistas principales (Login, Dashboard, Crear) ya están en Bootstrap
+4. Si necesitas las vistas restantes, avísame y las convierto
+

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Favicon Generator</title>
+</head>
+<body>
+    <canvas id="canvas" width="64" height="64"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Gradiente de fondo (colores Colombia)
+        const gradient = ctx.createLinearGradient(0, 0, 64, 64);
+        gradient.addColorStop(0, '#FCD116');
+        gradient.addColorStop(0.5, '#003893');
+        gradient.addColorStop(1, '#CE1126');
+        
+        // Fondo circular
+        ctx.beginPath();
+        ctx.arc(32, 32, 30, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // Clipboard blanco
+        ctx.fillStyle = 'white';
+        ctx.fillRect(20, 14, 24, 32);
+        ctx.fillRect(28, 12, 8, 4);
+        
+        // Líneas de texto
+        ctx.fillStyle = '#003893';
+        ctx.fillRect(24, 20, 16, 2);
+        
+        ctx.fillStyle = '#FCD116';
+        ctx.fillRect(24, 26, 12, 2);
+        
+        ctx.fillStyle = '#CE1126';
+        ctx.fillRect(24, 32, 14, 2);
+        ctx.beginPath();
+        ctx.arc(26, 36, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Círculos (checkboxes)
+        ctx.strokeStyle = '#003893';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.arc(26, 24, 1.5, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.strokeStyle = '#FCD116';
+        ctx.beginPath();
+        ctx.arc(26, 30, 1.5, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Check mark
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(25, 36);
+        ctx.lineTo(26, 37);
+        ctx.lineTo(27.5, 35);
+        ctx.stroke();
+        
+        console.log('Favicon generado. Descarga la imagen manualmente.');
+    </script>
+</body>
+</html>

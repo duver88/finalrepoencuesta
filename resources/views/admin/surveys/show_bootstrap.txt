@@ -1,0 +1,1 @@
+Archivo temporal para guardar contenido de show.blade.php convertido a Bootstrap

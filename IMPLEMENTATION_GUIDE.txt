@@ -1,0 +1,166 @@
+IMPLEMENTATION GUIDE - SURVEY REPORTING SYSTEM
+
+OVERVIEW
+The system has well-structured models with proper relationships, token-based voting,
+fraud detection, and device fingerprinting. Leverage existing Vote scopes.
+
+PHASE 1: CREATE REPORT GENERATION SERVICE
+File: app/Services/SurveyReportGenerator.php
+
+Methods:
+1. generateBasicStats(Survey $survey)
+   - total_views from $survey->views_count
+   - total_submitted: $survey->votes()->valid()->count()
+   - total_valid: $survey->votes()->countable()->count()
+   - unique_voters: distinct fingerprints
+   - pending_review, rejected, not_counted counts
+   - conversion_rate calculation
+
+2. generateQuestionStats(Survey $survey)
+   - per-question vote totals
+   - per-option breakdown with percentages
+
+3. generateFraudStats(Survey $survey)
+   - avg_fraud_score
+   - high_risk_count
+   - fraud_distribution
+   - common_reasons from JSON
+
+4. generateConversionMetrics(Survey $survey)
+   - views_to_submission ratio
+   - submission_to_approval ratio
+   - rejection_rate
+   - fraud_detection_rate
+
+5. generateTokenStats(Survey $survey)
+   - token counts by status
+   - multi-attempt tokens
+   - source distribution
+
+PHASE 2: CREATE GROUP REPORT SERVICE
+File: app/Services/GroupReportGenerator.php
+
+Methods:
+1. generateGroupStats(SurveyGroup $group)
+   - aggregate views, votes, unique voters across surveys
+   - conversion rate for group
+   - restriction enforcement check
+
+2. generatePerSurveyContribution(SurveyGroup $group)
+   - breakdown by survey within group
+   - compare views/votes/conversion between surveys
+
+3. generateAggregateQuestionStats(SurveyGroup $group)
+   - if same questions across surveys, aggregate votes
+   - show combined percentages
+
+4. generateFraudStatsGroup(SurveyGroup $group)
+   - avg fraud across all group surveys
+   - compare fraud patterns
+
+PHASE 3: CREATE REPORT CONTROLLER
+File: app/Http/Controllers/Admin/ReportController.php
+
+Routes:
+- GET /admin/surveys/{survey}/report
+- GET /admin/surveys/{survey}/report/export
+- GET /admin/survey-groups/{group}/report
+- GET /admin/survey-groups/{group}/report/export
+
+PHASE 4: CREATE REPORT VIEWS
+Templates for survey reports and group reports with:
+- Key metrics cards
+- Charts (pie for options, bar for fraud)
+- Detailed tables
+- Export buttons
+
+PHASE 5: REGISTER ROUTES IN routes/web.php
+
+VOTE COUNTING LOGIC - CRITICAL
+==============================
+
+Always use these patterns:
+
+Final results (display): votes()->countable()->count()
+  = valid() AND approved()
+
+All submitted: votes()->valid()->count()
+  = has token OR is_manual
+
+Pending review: votes()->pendingReview()->count()
+  = status='pending_review'
+
+Rejected: votes()->rejected()->count()
+  = status='rejected'
+
+Invalid/not counted: votes()->where('is_valid', false)->count()
+  = no token AND not manual
+
+Unique voters: votes()->countable()->distinct('fingerprint')->count()
+
+SCOPES AVAILABLE ON VOTE MODEL
+==============================
+- valid() - has token or manual
+- approved() - status='approved'
+- countable() - valid AND approved
+- pendingReview() - status='pending_review'
+- rejected() - status='rejected'
+- highRisk(60) - fraud_score >= 60
+
+FRAUD DETECTION CONTEXT
+=======================
+VoteFraudDetector analyzes on vote creation:
+- fraud_score: 0-100
+- status: 'approved' or 'pending_review' (>= 40 score)
+- fraud_reasons: JSON array of detected issues
+
+Thresholds:
+- 30 votes per option in 5 mins = +25 points
+- 15 same user agent in 10 mins = +30 points
+- 20 same screen res in 10 mins = +20 points
+- 50 votes spike in 2 mins = +35 points
+- 80% votes to one option = +40 points
+
+DEVICE FINGERPRINTING
+====================
+Captures: fingerprint, user_agent, platform, screen_resolution, hardware_concurrency
+Methods: hasDeviceVotedInSurvey(), findSimilarDevice(), calculateDeviceSimilarity()
+
+GROUP VOTING RESTRICTION
+=======================
+If group.restrict_voting = true:
+- One fingerprint = one vote in entire group
+- Check: group.hasVotedInGroup($fingerprint)
+- Get voted survey: group.getVotedSurvey($fingerprint)
+
+VIEWS TRACKING CURRENT STATE
+============================
+- surveys.views_count INTEGER field
+- Session-based: survey_viewed_{survey_id}
+- Only counts once per session per browser
+- No historical data retention
+- Sufficient for conversion metrics
+
+KEY QUERY PATTERNS
+==================
+
+Individual survey stats:
+  $survey->votes()->countable()->count()
+  $survey->votes()->pendingReview()->count()
+  $survey->votes()->rejected()->count()
+  $survey->votes()->valid()->distinct('fingerprint')->count()
+
+Group aggregation:
+  SELECT COUNT(*) FROM votes v
+  JOIN questions q ON v.question_id = q.id
+  JOIN surveys s ON q.survey_id = s.id
+  WHERE s.survey_group_id = {group_id}
+  AND v.is_valid = true AND v.status = 'approved'
+
+PERFORMANCE NOTES
+=================
+- Use eager loading: with(['questions.options.votes', 'tokens'])
+- Consider caching report results
+- Index votes table: [survey_id, status, created_at]
+- For group reports with many surveys, optimize with select()
+

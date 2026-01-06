@@ -1,0 +1,253 @@
+CODE REFERENCE FOR REPORTING SYSTEM
+
+=== KEY QUERIES FOR REPORTING ===
+
+1. INDIVIDUAL SURVEY STATISTICS
+
+Total Views:
+  SELECT views_count FROM surveys WHERE id = {survey_id}
+  
+Total Submitted Votes:
+  SELECT COUNT(*) FROM votes 
+  WHERE survey_id = {survey_id} AND is_valid = true
+
+Valid Approved Votes (counted in results):
+  SELECT COUNT(*) FROM votes 
+  WHERE survey_id = {survey_id} AND is_valid = true AND status = 'approved'
+
+Pending Review Votes:
+  SELECT COUNT(*) FROM votes 
+  WHERE survey_id = {survey_id} AND status = 'pending_review'
+
+Rejected Votes:
+  SELECT COUNT(*) FROM votes 
+  WHERE survey_id = {survey_id} AND status = 'rejected'
+
+Invalid/Not Counted Votes:
+  SELECT COUNT(*) FROM votes 
+  WHERE survey_id = {survey_id} AND is_valid = false
+
+Unique Voters (Distinct Fingerprints):
+  SELECT COUNT(DISTINCT fingerprint) FROM votes 
+  WHERE survey_id = {survey_id} AND is_valid = true
+
+Conversion Rate:
+  valid_votes / views_count * 100
+
+Average Fraud Score:
+  SELECT AVG(fraud_score) FROM votes 
+  WHERE survey_id = {survey_id}
+
+High-Risk Votes:
+  SELECT COUNT(*) FROM votes 
+  WHERE survey_id = {survey_id} AND fraud_score >= 60
+
+Fraud Reasons Distribution:
+  SELECT fraud_reasons FROM votes 
+  WHERE survey_id = {survey_id} AND fraud_reasons IS NOT NULL
+
+=== PER-QUESTION STATISTICS ===
+
+Votes per Question:
+  SELECT q.id, q.question_text, COUNT(v.id) as vote_count
+  FROM questions q
+  LEFT JOIN votes v ON q.id = v.question_id
+  WHERE q.survey_id = {survey_id} AND v.is_valid = true AND v.status = 'approved'
+  GROUP BY q.id
+
+Per-Option Breakdown:
+  SELECT 
+    qo.id, 
+    qo.option_text,
+    qo.color,
+    COUNT(v.id) as vote_count,
+    ROUND(COUNT(v.id) * 100.0 / 
+      (SELECT COUNT(*) FROM votes 
+       WHERE question_id = {question_id} AND is_valid = true AND status = 'approved'), 2) as percentage
+  FROM question_options qo
+  LEFT JOIN votes v ON qo.id = v.question_option_id 
+  WHERE qo.question_id = {question_id} AND (v.is_valid = true AND v.status = 'approved' OR v.id IS NULL)
+  GROUP BY qo.id
+
+=== GROUP STATISTICS ===
+
+Total Views in Group:
+  SELECT SUM(s.views_count) FROM surveys s 
+  WHERE s.survey_group_id = {group_id}
+
+Total Votes in Group:
+  SELECT COUNT(*) FROM votes v
+  JOIN questions q ON v.question_id = q.id
+  JOIN surveys s ON q.survey_id = s.id
+  WHERE s.survey_group_id = {group_id} AND v.is_valid = true AND v.status = 'approved'
+
+Unique Voters in Group:
+  SELECT COUNT(DISTINCT v.fingerprint) FROM votes v
+  JOIN questions q ON v.question_id = q.id
+  JOIN surveys s ON q.survey_id = s.id
+  WHERE s.survey_group_id = {group_id} AND v.is_valid = true
+
+Per-Survey Contribution:
+  SELECT s.id, s.title, COUNT(v.id) as votes, COUNT(DISTINCT v.fingerprint) as unique_voters
+  FROM surveys s
+  LEFT JOIN questions q ON s.id = q.survey_id
+  LEFT JOIN votes v ON q.id = v.question_id AND v.is_valid = true AND v.status = 'approved'
+  WHERE s.survey_group_id = {group_id}
+  GROUP BY s.id, s.title
+
+=== ELOQUENT MODEL QUERIES ===
+
+Survey::with(['questions.options.votes'])->where('id', $surveyId)->first()
+
+$survey->votes()->countable()->count()
+$survey->votes()->pendingReview()->count()
+$survey->votes()->rejected()->count()
+$survey->votes()->valid()->distinct('fingerprint')->count()
+
+Vote::where('survey_id', $surveyId)->where('is_valid', true)->count()
+Vote::whereHas('question', function($q) use ($surveyId) {
+  $q->where('survey_id', $surveyId);
+})->where('status', 'pending_review')->count()
+
+SurveyGroup::with('surveys.questions.options.votes')->find($groupId)
+$group->surveys()->get()
+$group->hasVotedInGroup($fingerprint)
+
+=== FRAUD DETECTION QUERIES ===
+
+High Fraud Risk Summary:
+  SELECT fraud_score, COUNT(*) as count
+  FROM votes
+  WHERE survey_id = {survey_id}
+  GROUP BY fraud_score
+  ORDER BY fraud_score DESC
+
+Most Common Fraud Reasons:
+  SELECT fraud_reasons, COUNT(*) as count
+  FROM votes
+  WHERE survey_id = {survey_id} AND fraud_reasons IS NOT NULL
+  GROUP BY fraud_reasons
+  ORDER BY count DESC
+
+Time-based Spike Detection (last 2 minutes):
+  SELECT COUNT(*) as recent_votes, created_at
+  FROM votes
+  WHERE survey_id = {survey_id}
+  AND question_id = {question_id}
+  AND created_at >= NOW() - INTERVAL 2 MINUTE
+  GROUP BY MINUTE(created_at)
+
+=== TOKEN STATISTICS ===
+
+Token Usage:
+  SELECT 
+    status,
+    COUNT(*) as count,
+    AVG(vote_attempts) as avg_attempts
+  FROM survey_tokens
+  WHERE survey_id = {survey_id}
+  GROUP BY status
+
+Tokens with Multiple Attempts:
+  SELECT COUNT(*) FROM survey_tokens
+  WHERE survey_id = {survey_id} AND vote_attempts > 1
+
+Source Distribution:
+  SELECT source, COUNT(*) as count
+  FROM survey_tokens
+  WHERE survey_id = {survey_id}
+  GROUP BY source
+
+=== EXISTING ADMIN CONTROLLER PATTERNS ===
+
+From AdminSurveyController::show():
+
+  $uniqueVoters = $survey->votes()->countable()->distinct('fingerprint')->count();
+  $totalVotes = $survey->votes()->countable()->count();
+  $pendingReview = $survey->votes()->pendingReview()->count();
+  $rejectedVotes = $survey->votes()->rejected()->count();
+  $totalAllVotes = $survey->votes()->valid()->count();
+
+  $questionStats = [];
+  foreach ($survey->questions as $question) {
+    $questionVotes = $question->votes()->countable()->count();
+    $options = [];
+    
+    foreach ($question->options as $option) {
+      $optionVotes = $option->votes()->countable()->count();
+      $percentage = $questionVotes > 0 ? 
+        round(($optionVotes / $questionVotes) * 100, 2) : 0;
+      
+      $options[] = [
+        'text' => $option->option_text,
+        'votes' => $optionVotes,
+        'percentage' => $percentage,
+      ];
+    }
+    
+    $questionStats[] = [
+      'question' => $question->question_text,
+      'total_votes' => $questionVotes,
+      'options' => $options,
+    ];
+  }
+
+=== VOTE SCOPE CHAINING EXAMPLES ===
+
+Properly counted votes (for results display):
+  $survey->votes()->countable()->count()
+  // Equivalent to: valid() AND approved()
+
+All submitted votes:
+  $survey->votes()->valid()->count()
+  // Includes pending_review and rejected
+
+Suspicious votes needing review:
+  $survey->votes()->pendingReview()->count()
+
+Rejected votes:
+  $survey->votes()->rejected()->count()
+
+High fraud risk:
+  $survey->votes()->highRisk(60)->count()
+
+=== FRAUD DETECTION SERVICE USAGE ===
+
+From VoteFraudDetector:
+
+  $fraudDetector = new VoteFraudDetector();
+  $analysis = $fraudDetector->analyzeVote($voteData, $questionId, $optionId);
+  // Returns: ['status' => 'approved|pending_review', 'fraud_score' => 0-100, 'fraud_reasons' => []]
+
+  $stats = $fraudDetector->getSurveyStats($surveyId);
+  // Returns: ['total_votes', 'approved_votes', 'pending_review', 'rejected_votes', 'avg_fraud_score', 'high_risk_votes']
+
+=== DEVICE FINGERPRINT USAGE ===
+
+From DeviceFingerprintMatcher:
+
+  $matcher = new DeviceFingerprintMatcher();
+  
+  $deviceData = [
+    'fingerprint' => $request->cookie('survey_fingerprint'),
+    'user_agent' => $request->userAgent(),
+    'platform' => $request->header('Sec-CH-UA-Platform'),
+    'screen_resolution' => $request->input('screen_resolution'),
+    'hardware_concurrency' => $request->input('hardware_concurrency')
+  ];
+  
+  $hasVoted = $matcher->hasDeviceVotedInSurvey($surveyId, $deviceData);
+  $similarity = $matcher->calculateDeviceSimilarity($device1, $device2);
+
+=== GROUP VOTING RESTRICTION ===
+
+Checking group voting restrictions:
+
+  if ($survey->group && $survey->group->restrict_voting) {
+    if ($survey->group->hasVotedInGroup($fingerprint)) {
+      $votedSurvey = $survey->group->getVotedSurvey($fingerprint);
+      // User already voted in: $votedSurvey
+      return redirect to already voted message
+    }
+  }
+

@@ -1,0 +1,145 @@
+REPORTING SYSTEM STRUCTURE - COMPLETE ANALYSIS
+
+1. SURVEY MODEL (app/Models/Survey.php)
+=====================================
+Fields: title, description, banner, og_image, slug, public_slug, is_active, is_finished, show_results, published_at, finished_at, views_count, survey_group_id
+
+Relationships: questions(), votes(), tokens(), group()
+Methods: getTotalVotesAttribute(), incrementViews()
+Views tracked: Via session key 'survey_viewed_{survey_id}' - only counts once per session
+
+
+2. VOTE MODEL (app/Models/Vote.php)
+==================================
+Fields: survey_id, survey_token_id, question_id, question_option_id, ip_address, fingerprint, user_agent, platform, screen_resolution, hardware_concurrency, is_manual, is_valid, status (approved/pending_review/rejected), fraud_score (0-100), fraud_reasons (JSON), reviewed_at, reviewed_by
+
+Key Scopes:
+- valid() = has token OR is_manual
+- approved() = status='approved'
+- countable() = valid() AND approved() (for results)
+- pendingReview(), rejected(), highRisk(60)
+
+Database Indexes: [status, created_at], [fraud_score, status]
+
+
+3. QUESTION & QUESTIONOPTION MODELS
+===================================
+Question: survey_id, question_text, question_type (single_choice/multiple_choice), order
+QuestionOption: question_id, option_text, order, color, image
+
+
+4. SURVEYGROUP MODEL (app/Models/SurveyGroup.php)
+================================================
+Fields: name, slug, description, restrict_voting (boolean)
+Methods: hasVotedInGroup(), getVotedSurvey(), getUsedTokenByFingerprint()
+Purpose: Group surveys, enforce single vote per device in group if restrict_voting=true
+
+
+5. SURVEYTOKEN MODEL (app/Models/SurveyToken.php)
+================================================
+Fields: survey_id, token (unique 32-char), source, campaign_id, status (pending/reserved/used/expired), used_at, used_by_fingerprint, user_agent, vote_attempts, last_attempt_at, reserved_at, reserved_by_session, reservation_expires_at
+
+Reserve tokens for 5 minutes during voting process
+
+
+6. FRAUD DETECTION (app/Services/VoteFraudDetector.php)
+=====================================================
+Thresholds:
+- 30 votes per option in 5 mins = +25 points
+- 15 votes same user agent in 10 mins = +30 points
+- 20 votes same screen resolution in 10 mins = +20 points
+- 50 votes in 2 mins = +35 points
+- 80% votes to one option in 30 mins = +40 points
+
+Score >= 60 = pending_review
+Score < 40 = approved
+
+
+7. DEVICE FINGERPRINTING (app/Services/DeviceFingerprintMatcher.php)
+=================================================================
+Captures: fingerprint, user_agent, platform, screen_resolution, hardware_concurrency
+Methods: hasDeviceVotedInSurvey(), findSimilarDevice(), calculateDeviceSimilarity()
+
+
+8. EXISTING STATISTICS
+=====================
+Dashboard: totalSurveys, activeSurveys, totalVotes, uniqueVoters
+Survey Detail: uniqueVoters, totalVotes, questionStats per question/option, pendingReview, rejectedVotes
+
+
+9. VOTE COUNTING LOGIC
+======================
+Total votes: Vote::valid()->count() (has token OR manual)
+Valid approved: votes()->countable()->count() (valid + approved)
+Distinct voters: Vote::valid()->distinct('fingerprint')->count()
+Pending: votes()->pendingReview()->count()
+Rejected: votes()->rejected()->count()
+Invalid/Not counted: votes WHERE is_valid=false
+
+
+10. DATA RELATIONSHIPS
+====================
+Survey
+├── questions (hasMany, ordered by 'order')
+│   └── options (hasMany QuestionOption, ordered by 'order')
+│       └── votes (hasMany Vote)
+├── votes (hasMany Vote)
+│   ├── survey_token_id -> SurveyToken
+│   ├── question_id -> Question
+│   └── question_option_id -> QuestionOption
+├── tokens (hasMany SurveyToken)
+└── group (belongsTo SurveyGroup)
+
+SurveyGroup
+└── surveys (hasMany Survey)
+
+
+11. REPORTING REQUIREMENTS
+=========================
+Individual Survey:
+- Total views: surveys.views_count
+- Total submitted: votes where is_valid=true
+- Valid votes: votes where is_valid=true AND status='approved'
+- Pending: votes where status='pending_review'
+- Rejected: votes where status='rejected'
+- Not counted: votes where is_valid=false
+- Conversion: valid_votes / views * 100
+- Per-answer: vote count and percentage
+- Fraud stats: avg_score, high_risk count
+
+Group Report:
+- Aggregate views (sum)
+- Aggregate votes (sum)
+- Unique voters (distinct fingerprints)
+- Per-survey contribution
+- Cross-survey analysis
+- If restrict_voting: one vote per fingerprint in entire group
+
+
+12. ROUTES
+==========
+Public:
+- GET /survey/{publicSlug}
+- POST /survey/{publicSlug}/vote
+- GET /{groupSlug}/{publicSlug}
+- POST /{groupSlug}/{publicSlug}/vote
+
+Admin:
+- GET /admin/surveys
+- GET /admin/surveys/{survey} (has stats)
+- GET /admin/surveys/{survey}/suspicious-votes
+- GET /admin/surveys/{survey}/tokens
+- GET /admin/survey-groups
+
+
+13. KEY IMPLEMENTATION POINTS
+=============================
+- Votes are created with survey_token_id (links to token)
+- Tokens can be reserved for 5-minute windows
+- Device fingerprinting prevents same-device votes
+- Fraud detection runs on vote creation
+- Group restriction enforced before vote is allowed
+- Views counted per-session to avoid duplicates (but historical data lost)
+- Vote status determines if it counts in results
+- Questions have order field for consistent display
+
