@@ -45,6 +45,7 @@ class SurveyController extends Controller
             'questions.*.question_text' => 'required|string|max:500',
             'questions.*.question_type' => 'required|in:single_choice,multiple_choice',
             'questions.*.display_mode' => 'nullable|in:buttons,dropdown',
+            'questions.*.randomize_options' => 'nullable|boolean',
             'questions.*.options' => 'required|array|min:2|max:20',
             'questions.*.options.*' => 'required|string|max:255',
             'questions.*.colors' => 'required|array|min:2|max:20',
@@ -118,6 +119,7 @@ class SurveyController extends Controller
                     'question_text' => $questionData['question_text'],
                     'question_type' => $questionData['question_type'],
                     'display_mode' => $questionData['display_mode'] ?? 'buttons',
+                    'randomize_options' => $questionData['randomize_options'] ?? true,
                     'order' => $index,
                 ]);
 
@@ -235,6 +237,7 @@ class SurveyController extends Controller
             'questions.*.question_text' => 'required|string',
             'questions.*.question_type' => 'required|in:single_choice,multiple_choice',
             'questions.*.display_mode' => 'nullable|in:buttons,dropdown',
+            'questions.*.randomize_options' => 'nullable|boolean',
             'questions.*.options' => 'required|array|min:2',
             'questions.*.options.*.id' => 'nullable|exists:question_options,id',
             'questions.*.options.*.option_text' => 'required|string',
@@ -301,6 +304,7 @@ class SurveyController extends Controller
                         'question_text' => $questionData['question_text'],
                         'question_type' => $questionData['question_type'],
                         'display_mode' => $questionData['display_mode'] ?? 'buttons',
+                        'randomize_options' => isset($questionData['randomize_options']) ? true : false,
                         'order' => $index,
                     ]);
                 } else {
@@ -308,6 +312,7 @@ class SurveyController extends Controller
                         'question_text' => $questionData['question_text'],
                         'question_type' => $questionData['question_type'],
                         'display_mode' => $questionData['display_mode'] ?? 'buttons',
+                        'randomize_options' => isset($questionData['randomize_options']) ? true : false,
                         'order' => $index,
                     ]);
                 }

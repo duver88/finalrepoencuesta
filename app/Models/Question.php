@@ -11,7 +11,12 @@ class Question extends Model
         'question_text',
         'question_type',
         'display_mode',
+        'randomize_options',
         'order',
+    ];
+
+    protected $casts = [
+        'randomize_options' => 'boolean',
     ];
 
     // Relaciones

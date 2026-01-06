@@ -77,6 +77,8 @@
                                 @php
                                     $hasImages = $question->options->contains(fn($opt) => !empty($opt->image));
                                     $displayMode = $question->display_mode ?? 'buttons';
+                                    $randomize = $question->randomize_options ?? true;
+                                    $options = $randomize ? $question->options->shuffle() : $question->options;
                                 @endphp
 
                                 @if($displayMode === 'dropdown' && !$hasImages)
@@ -84,13 +86,13 @@
                                     <select name="answers[{{ $question->id }}]" required class="form-select"
                                             style="background: #2d2d2d; color: #ffffff; border: 1px solid #444; padding: 12px; border-radius: 8px; font-size: 14px;">
                                         <option value="">Selecciona una opción...</option>
-                                        @foreach($question->options->shuffle() as $option)
+                                        @foreach($options as $option)
                                             <option value="{{ $option->id }}">{{ $option->option_text }}</option>
                                         @endforeach
                                     </select>
                                 @elseif($hasImages)
                                     <div class="options-grid">
-                                        @foreach($question->options->shuffle() as $option)
+                                        @foreach($options as $option)
                                             <label class="image-option" for="option{{ $option->id }}">
                                                 <input type="radio" name="answers[{{ $question->id }}]" value="{{ $option->id }}" id="option{{ $option->id }}" required>
                                                 @if($option->image)
@@ -103,7 +105,7 @@
                                         @endforeach
                                     </div>
                                 @else
-                                    @foreach($question->options->shuffle() as $option)
+                                    @foreach($options as $option)
                                         <label class="radio-option">
                                             <input type="radio" name="answers[{{ $question->id }}]" value="{{ $option->id }}" id="option{{ $option->id }}" required>
                                             <span class="radio-circle"></span>
@@ -115,13 +117,15 @@
                                 @php
                                     $hasImages = $question->options->contains(fn($opt) => !empty($opt->image));
                                     $displayMode = $question->display_mode ?? 'buttons';
+                                    $randomize = $question->randomize_options ?? true;
+                                    $options = $randomize ? $question->options->shuffle() : $question->options;
                                 @endphp
 
                                 @if($displayMode === 'dropdown' && !$hasImages)
                                     <!-- Modo Dropdown/Select Múltiple -->
                                     <select name="answers[{{ $question->id }}][]" multiple class="form-select"
                                             style="background: #2d2d2d; color: #ffffff; border: 1px solid #444; padding: 12px; border-radius: 8px; font-size: 14px; min-height: 200px;">
-                                        @foreach($question->options as $option)
+                                        @foreach($options as $option)
                                             <option value="{{ $option->id }}">{{ $option->option_text }}</option>
                                         @endforeach
                                     </select>
@@ -130,7 +134,7 @@
                                     </small>
                                 @elseif($hasImages)
                                     <div class="options-grid">
-                                        @foreach($question->options as $option)
+                                        @foreach($options as $option)
                                             <label class="image-option" for="option{{ $option->id }}">
                                                 <input type="checkbox" name="answers[{{ $question->id }}][]" value="{{ $option->id }}" id="option{{ $option->id }}">
                                                 @if($option->image)
@@ -143,7 +147,7 @@
                                         @endforeach
                                     </div>
                                 @else
-                                    @foreach($question->options as $option)
+                                    @foreach($options as $option)
                                         <label class="checkbox-option">
                                             <input type="checkbox" name="answers[{{ $question->id }}][]" value="{{ $option->id }}" id="option{{ $option->id }}">
                                             <span class="checkbox-box"></span>

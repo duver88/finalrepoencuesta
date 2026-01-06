@@ -17,6 +17,7 @@ return new class extends Migration
             $table->text('question_text');
             $table->enum('question_type', ['single_choice', 'multiple_choice'])->default('single_choice');
             $table->enum('display_mode', ['buttons', 'dropdown'])->default('buttons');
+            $table->boolean('randomize_options')->default(true);
             $table->integer('order')->default(0);
             $table->timestamps();
         });

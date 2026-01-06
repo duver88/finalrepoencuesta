@@ -193,6 +193,17 @@
                                 </div>
 
                                 <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="questions[{{ $qIndex }}][randomize_options]"
+                                               id="randomize{{ $qIndex }}" value="1" {{ old('questions.'.$qIndex.'.randomize_options', $question->randomize_options ?? true) ? 'checked' : '' }}>
+                                        <label class="form-check-label fw-semibold" for="randomize{{ $qIndex }}">
+                                            <i class="bi bi-shuffle"></i> Mostrar opciones en orden aleatorio
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">Si está activado, las opciones se mostrarán en orden aleatorio a cada votante.</small>
+                                </div>
+
+                                <div class="mb-3">
                                     <label class="form-label fw-semibold">Opciones de Respuesta *</label>
                                     <div id="options-container-{{ $qIndex }}">
                                         @foreach($question->options as $oIndex => $option)
@@ -383,6 +394,17 @@ function addNewQuestion() {
                     <option value="dropdown">Desplegable (select - ideal para muchas opciones)</option>
                 </select>
                 <small class="text-muted">Elige "Desplegable" si la pregunta tiene muchas opciones.</small>
+            </div>
+
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="questions[${newQuestionIndex}][randomize_options]"
+                           id="randomize${newQuestionIndex}" value="1" checked>
+                    <label class="form-check-label fw-semibold" for="randomize${newQuestionIndex}">
+                        <i class="bi bi-shuffle"></i> Mostrar opciones en orden aleatorio
+                    </label>
+                </div>
+                <small class="text-muted">Si está activado, las opciones se mostrarán en orden aleatorio a cada votante.</small>
             </div>
 
             <div class="mb-3">
